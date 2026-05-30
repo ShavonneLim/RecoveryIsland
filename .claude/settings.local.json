@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\shavo\\\\Desktop\\\\Recovery Island\\\\draft\\\\recovery-island\" -Recurse -Force)",
+      "Bash(Select-Object FullName)"
+    ]
+  }
+}

@@ -1,0 +1,393 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+
+const PSS_QS = [
+  { text: 'In the last month, how often have you been upset because of something that happened unexpectedly?', rev: false },
+  { text: 'In the last month, how often have you felt that you were unable to control the important things in your life?', rev: false },
+  { text: 'In the last month, how often have you felt nervous and stressed?', rev: false },
+  { text: 'In the last month, how often have you felt confident about your ability to handle your personal problems?', rev: true },
+  { text: 'In the last month, how often have you felt that things were going your way?', rev: true },
+  { text: 'In the last month, how often have you found that you could not cope with all the things that you had to do?', rev: false },
+  { text: 'In the last month, how often have you been able to control irritations in your life?', rev: true },
+  { text: 'In the last month, how often have you felt that you were on top of things?', rev: true },
+  { text: 'In the last month, how often have you been angered because of things that were outside of your control?', rev: false },
+  { text: 'In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?', rev: false },
+]
+
+const PHQ_QS = [
+  'Little interest or pleasure in doing things',
+  'Feeling down, depressed, or hopeless',
+  'Trouble falling or staying asleep, or sleeping too much',
+  'Feeling tired or having little energy',
+  'Poor appetite or overeating',
+  'Feeling bad about yourself — or that you are a failure or have let yourself or your family down',
+  'Trouble concentrating on things, such as reading the newspaper or watching television',
+  'Moving or speaking so slowly that other people could have noticed? Or the opposite — being so fidgety or restless that you have been moving a lot more than usual',
+  'Thoughts that you would be better off dead, or of hurting yourself in some way',
+]
+
+const GAD_QS = [
+  'Feeling nervous, anxious, or on edge',
+  'Not being able to stop or control worrying',
+  'Worrying too much about different things',
+  'Trouble relaxing',
+  'Being so restless that it is hard to sit still',
+  'Becoming easily annoyed or irritable',
+  'Feeling afraid, as if something awful might happen',
+]
+
+const CDRISC_QS = [
+  'I am able to adapt to change.',
+  'I can handle unexpected events.',
+  'I find humour helpful when facing difficulties.',
+  'Stress can lead to personal growth.',
+  'I can recover from setbacks.',
+]
+
+const SCALES = [
+  {
+    id: 'pss',
+    shortName: 'PSS-10',
+    name: 'Perceived Stress Scale',
+    icon: '🌊',
+    color: '#8b5cf6',
+    intro: 'The following questions ask about your feelings and thoughts during the last month. In each case, please indicate how often you felt or thought a certain way.',
+    options: ['Never', 'Almost Never', 'Sometimes', 'Fairly Often', 'Very Often'],
+    questions: PSS_QS.map(q => q.text),
+    reversed: PSS_QS.reduce((acc, q, i) => { if (q.rev) acc.push(i); return acc }, []),
+    maxScore: 40,
+    getSeverity: s =>
+      s < 14  ? { label: 'Low Stress',      color: '#10b981', tier: 'mild'     } :
+      s <= 26 ? { label: 'Moderate Stress',  color: '#f59e0b', tier: 'moderate' } :
+                { label: 'High Stress',      color: '#ef4444', tier: 'severe'   },
+  },
+  {
+    id: 'phq',
+    shortName: 'PHQ-9',
+    name: 'Patient Health Questionnaire',
+    icon: '💭',
+    color: '#6366f1',
+    intro: 'Over the last two weeks, how often have you been bothered by any of the following problems?',
+    options: ['Not at all', 'Several days', 'More than half the days', 'Nearly every day'],
+    questions: PHQ_QS,
+    reversed: [],
+    maxScore: 27,
+    getSeverity: s =>
+      s <= 4  ? { label: 'None',                  color: '#10b981', tier: 'mild'     } :
+      s <= 9  ? { label: 'Mild',                   color: '#84cc16', tier: 'mild'     } :
+      s <= 14 ? { label: 'Moderate',               color: '#f59e0b', tier: 'moderate' } :
+      s <= 19 ? { label: 'Moderately Severe',       color: '#f97316', tier: 'moderate' } :
+                { label: 'Severe',                  color: '#ef4444', tier: 'severe'   },
+  },
+  {
+    id: 'gad',
+    shortName: 'GAD-7',
+    name: 'General Anxiety Disorder',
+    icon: '🫀',
+    color: '#06b6d4',
+    intro: 'Over the last two weeks, how often have you been bothered by any of the following problems?',
+    options: ['Not at all', 'Several days', 'More than half the days', 'Nearly every day'],
+    questions: GAD_QS,
+    reversed: [],
+    maxScore: 21,
+    getSeverity: s =>
+      s <= 4  ? { label: 'None-Minimal',  color: '#10b981', tier: 'mild'     } :
+      s <= 9  ? { label: 'Mild',           color: '#84cc16', tier: 'mild'     } :
+      s <= 14 ? { label: 'Moderate',       color: '#f59e0b', tier: 'moderate' } :
+                { label: 'Severe',         color: '#ef4444', tier: 'severe'   },
+  },
+  {
+    id: 'cdrisc',
+    shortName: 'CD-RISC 5',
+    name: 'Connor-Davidson Resilience Scale',
+    icon: '🌱',
+    color: '#10b981',
+    intro: 'Below are five statements that people often use to describe themselves. For each statement, please rate how well it describes you over the past month.',
+    options: ['Not true at all', 'Rarely true', 'Sometimes true', 'Often true', 'True nearly all the time'],
+    questions: CDRISC_QS,
+    reversed: [],
+    maxScore: 20,
+    getSeverity: s =>
+      s >= 14 ? { label: 'High Resilience',     color: '#10b981', tier: 'high'     } :
+      s >= 7  ? { label: 'Moderate Resilience',  color: '#f59e0b', tier: 'moderate' } :
+                { label: 'Low Resilience',        color: '#ef4444', tier: 'low'      },
+  },
+]
+
+function computeScore(scale, ans) {
+  return scale.questions.reduce((sum, _, i) => {
+    if (ans[i] === undefined) return sum
+    const v = scale.reversed.includes(i) ? (scale.options.length - 1 - ans[i]) : ans[i]
+    return sum + v
+  }, 0)
+}
+
+function getAdviceKey(scores, phqAnswers) {
+  // Any score > 0 on PHQ-9 item 9 (suicidal ideation) is clinically significant
+  if (phqAnswers[8] !== undefined && phqAnswers[8] > 0) return 'emergency'
+  if (scores.phq >= 20 || scores.gad >= 15 || scores.pss >= 27) return 'emergency'
+  if (scores.phq >= 10 || scores.gad >= 10 || scores.pss >= 14) return 'professional'
+  return 'selfcare'
+}
+
+const ADVICE = {
+  emergency: {
+    emoji: '🆘',
+    title: 'Seek support immediately',
+    color: '#ef4444',
+    bg: 'rgba(239,68,68,0.08)',
+    border: 'rgba(239,68,68,0.3)',
+    body: "Your scores suggest you may be experiencing significant distress right now. Please reach out to a mental health professional or crisis line as soon as possible. You do not have to face this alone — help is available and you deserve care right now.",
+    steps: [
+      'Call a mental health crisis line immediately',
+      'Visit your nearest emergency department if you are in immediate danger',
+      'Contact your doctor, therapist, or a trusted person today',
+    ],
+    actions: [],
+  },
+  professional: {
+    emoji: '🩺',
+    title: 'Make an appointment soon',
+    color: '#f59e0b',
+    bg: 'rgba(245,158,11,0.08)',
+    border: 'rgba(245,158,11,0.3)',
+    body: "Your scores suggest you would benefit from professional support. Booking an appointment with a mental health professional is a brave and caring step — and you deserve to feel better.",
+    steps: [
+      'Book an appointment with a psychologist, counsellor, or GP',
+      'Talk to someone you trust about how you have been feeling',
+      'In the meantime, explore the self-care resources on this island',
+    ],
+    actions: [
+      { label: 'Mindfulness Villa', path: '/mindfulness', color: '#10b981' },
+      { label: 'Chat with Sage', path: '/ai-chatbot', color: '#6366f1' },
+    ],
+  },
+  selfcare: {
+    emoji: '🌸',
+    title: 'Keep nurturing your wellbeing',
+    color: '#10b981',
+    bg: 'rgba(16,185,129,0.08)',
+    border: 'rgba(16,185,129,0.3)',
+    body: "Your scores suggest you are coping reasonably well. I encourage you to keep nurturing yourself with gentle, consistent care. These resources are always here for you whenever you need them.",
+    steps: [
+      'Visit the Mindfulness Villa for guided breathing and meditation practices',
+      'Chat with Sage, our AI wellbeing companion, whenever you need support',
+      'Come back and retake these assessments in a few weeks to track your progress',
+    ],
+    actions: [
+      { label: 'Mindfulness Villa', path: '/mindfulness', color: '#10b981' },
+      { label: 'Chat with Sage', path: '/ai-chatbot', color: '#6366f1' },
+    ],
+  },
+}
+
+function ScaleSection({ scale, allAnswers, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ans = allAnswers[scale.id] || {}
+  const answeredCount = scale.questions.filter((_, i) => ans[i] !== undefined).length
+  const complete = answeredCount === scale.questions.length
+  const score = complete ? computeScore(scale, ans) : null
+  const severity = complete ? scale.getSeverity(score) : null
+
+  return (
+    <div className="es-card" style={{ '--es-c': scale.color }}>
+      <button className="es-card-header" onClick={() => setOpen(v => !v)}>
+        <span className="es-card-icon">{scale.icon}</span>
+        <div className="es-card-meta">
+          <span className="es-card-short">{scale.shortName}</span>
+          <span className="es-card-name">{scale.name}</span>
+        </div>
+        <div className="es-card-right">
+          {complete && severity ? (
+            <span className="es-badge" style={{ background: severity.color + '22', color: severity.color }}>
+              {score}/{scale.maxScore} · {severity.label}
+            </span>
+          ) : (
+            <span className="es-progress-text">{answeredCount}/{scale.questions.length}</span>
+          )}
+          <span className="es-chevron">{open ? '▲' : '▼'}</span>
+        </div>
+      </button>
+
+      {open && (
+        <div className="es-card-body">
+          <p className="es-intro-text">{scale.intro}</p>
+          <div className="es-legend">
+            {scale.options.map((opt, i) => (
+              <span key={i} className="es-legend-item">
+                <strong>{i}</strong> = {opt}
+              </span>
+            ))}
+          </div>
+
+          {scale.questions.map((q, qi) => (
+            <div key={qi} className={`es-question ${ans[qi] !== undefined ? 'es-question--done' : ''}`}>
+              <p className="es-q-text">
+                <span className="es-q-num">{qi + 1}.</span> {q}
+              </p>
+              <div className="es-option-row">
+                {scale.options.map((_, oi) => (
+                  <button
+                    key={oi}
+                    className={`es-opt-btn ${ans[qi] === oi ? 'es-opt-btn--selected' : ''}`}
+                    onClick={() => onChange(scale.id, qi, oi)}
+                  >
+                    {oi}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {complete && severity && (
+            <div className="es-section-score" style={{ borderColor: severity.color + '55', background: severity.color + '11' }}>
+              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>Section score:</span>
+              <span style={{ color: severity.color, fontWeight: 600, fontSize: 15 }}>
+                {score}/{scale.maxScore}
+              </span>
+              <span className="es-sev-pill" style={{ background: severity.color + '22', color: severity.color }}>
+                {severity.label}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function EmotionScales() {
+  const navigate = useNavigate()
+  const [answers, setAnswers] = useState({})
+  const [showResults, setShowResults] = useState(false)
+
+  function handleAnswer(scaleId, qi, val) {
+    setAnswers(prev => ({
+      ...prev,
+      [scaleId]: { ...(prev[scaleId] || {}), [qi]: val },
+    }))
+    setShowResults(false)
+  }
+
+  const allComplete = SCALES.every(s => {
+    const ans = answers[s.id] || {}
+    return s.questions.every((_, i) => ans[i] !== undefined)
+  })
+
+  const scores = allComplete ? {
+    pss:    computeScore(SCALES[0], answers.pss    || {}),
+    phq:    computeScore(SCALES[1], answers.phq    || {}),
+    gad:    computeScore(SCALES[2], answers.gad    || {}),
+    cdrisc: computeScore(SCALES[3], answers.cdrisc || {}),
+  } : null
+
+  const adviceKey = scores ? getAdviceKey(scores, answers.phq || {}) : null
+  const advice    = adviceKey ? ADVICE[adviceKey] : null
+
+  return (
+    <div className="villa-page" style={{ '--villa-color': '#8b5cf6', '--villa-color-light': '#c4b5fd' }}>
+      <div className="villa-bg">
+        <div className="villa-bg-orb orb1" />
+        <div className="villa-bg-orb orb2" />
+        <div className="villa-bg-orb orb3" />
+      </div>
+
+      <button className="back-btn" onClick={() => navigate('/mood-diary')}>
+        ← Back to Mood Diary
+      </button>
+
+      <div className="villa-hero">
+        <div className="villa-emoji">📋</div>
+        <div className="villa-tag">Emotion Scales</div>
+        <h1 className="villa-title">My Emotion Scores</h1>
+        <p className="villa-subtitle">
+          Complete four standardised assessments to understand your emotional wellbeing.
+          Maia will offer personalised guidance based on your results.
+        </p>
+      </div>
+
+      <div className="es-container">
+        {SCALES.map(scale => (
+          <ScaleSection
+            key={scale.id}
+            scale={scale}
+            allAnswers={answers}
+            onChange={handleAnswer}
+          />
+        ))}
+
+        {allComplete && !showResults && (
+          <button className="es-results-btn" onClick={() => {
+            // Persist each scale's score so MoodDiaryCentre can display them
+            const toSave = {}
+            SCALES.forEach(s => {
+              toSave[s.id] = { score: computeScore(s, answers[s.id] || {}), date: new Date().toISOString() }
+            })
+            localStorage.setItem('ri_scores', JSON.stringify(toSave))
+            setShowResults(true)
+          }}>
+            View My Results &amp; Maia's Advice ✨
+          </button>
+        )}
+
+        {showResults && scores && advice && (
+          <div className="es-results">
+            <h2 className="es-results-title">Your Results</h2>
+
+            <div className="es-scores-grid">
+              {SCALES.map(scale => {
+                const s   = scores[scale.id]
+                const sev = scale.getSeverity(s)
+                return (
+                  <div key={scale.id} className="es-score-card" style={{ borderColor: sev.color + '44' }}>
+                    <span className="es-score-icon">{scale.icon}</span>
+                    <span className="es-score-shortname">{scale.shortName}</span>
+                    <span className="es-score-value" style={{ color: sev.color }}>
+                      {s}
+                      <span className="es-score-max">/{scale.maxScore}</span>
+                    </span>
+                    <span className="es-score-label" style={{ background: sev.color + '22', color: sev.color }}>
+                      {sev.label}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="es-advice-panel" style={{ background: advice.bg, borderColor: advice.border }}>
+              <div className="es-advice-header">
+                <span className="es-advice-emoji">{advice.emoji}</span>
+                <div>
+                  <p className="es-advice-from">Maia says</p>
+                  <h3 className="es-advice-title" style={{ color: advice.color }}>{advice.title}</h3>
+                </div>
+              </div>
+              <p className="es-advice-body">{advice.body}</p>
+              <ul className="es-advice-steps">
+                {advice.steps.map((step, i) => <li key={i}>{step}</li>)}
+              </ul>
+              {advice.actions.length > 0 && (
+                <div className="es-advice-actions">
+                  {advice.actions.map(a => (
+                    <button
+                      key={a.path}
+                      className="es-action-btn"
+                      style={{ background: a.color }}
+                      onClick={() => navigate(a.path)}
+                    >
+                      {a.label} →
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button className="es-retake-btn" onClick={() => { setAnswers({}); setShowResults(false) }}>
+              Retake Assessments
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
