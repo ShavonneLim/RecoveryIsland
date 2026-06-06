@@ -18,7 +18,7 @@ body {
 .ocean {
   position: fixed;
   inset: 0;
-  background: linear-gradient(180deg, #0077b6 0%, #00b4d8 40%, #90e0ef 100%);
+  background: linear-gradient(175deg, #0d4a3a 0%, #0f7a5e 35%, #22c9a0 70%, #a7f3d0 100%);
   z-index: 0;
   overflow: hidden;
 }
@@ -225,7 +225,7 @@ body {
 .villa-bg {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #1a1208 0%, #231a0e 50%, #1e1610 100%);
   z-index: 0;
   overflow: hidden;
 }
@@ -343,7 +343,7 @@ body {
 
 .villa-subtitle {
   font-size: clamp(14px, 2vw, 18px);
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,240,200,0.6);
   max-width: 500px;
   margin: 0 auto;
   line-height: 1.7;
@@ -363,9 +363,9 @@ body {
 }
 
 .villa-card {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255,245,220,0.06);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,215,150,0.12);
   border-radius: 20px;
   padding: 32px;
   transition: all 0.3s ease;
@@ -373,14 +373,19 @@ body {
 }
 
 .villa-card:hover {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,245,220,0.09);
   border-color: var(--villa-color);
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2), 0 0 30px rgba(0,0,0,0.1);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25), 0 0 40px rgba(0,0,0,0.12);
 }
 
 @keyframes card-rise {
   from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -397,7 +402,7 @@ body {
 
 .card-text {
   font-size: 14px;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,240,200,0.6);
   line-height: 1.8;
   margin-bottom: 20px;
 }

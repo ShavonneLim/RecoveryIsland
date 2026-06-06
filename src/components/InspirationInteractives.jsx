@@ -36,7 +36,7 @@ const GOAL_PHASES = [
     items: [
       'Pair your goal with something you already do — stack new habits onto existing ones.',
       'Start smaller than feels necessary. Tiny and consistent outlasts big and irregular.',
-      'Track progress lightly — celebrate streaks, but don\'t let missing one end everything.',
+      "Track progress lightly — celebrate streaks, but don't let missing one end everything.",
       'Tell one person you trust. Accountability is a gift, not a burden.',
     ]
   },
@@ -107,6 +107,88 @@ export function GoalStepper() {
           )}
         </div>
       ))}
+    </div>
+  )
+}
+
+const STORIES = [
+  {
+    name: 'Aisha, 24',
+    tag: 'Anxiety & University',
+    color: '#8b5cf6',
+    quote: 'I spent my first semester pretending I was fine. The day I walked into the counselling centre and said "I need help" was the hardest and best thing I ever did.',
+    story: "Aisha transferred universities in her second year and felt like she was starting from zero — new city, no friends, overwhelming coursework. She stopped sleeping, started skipping classes, and kept telling herself it would pass. It didn't. After finally reaching out to her university wellness centre, she was diagnosed with generalised anxiety. Therapy, a small study group, and mood tracking slowly gave her tools she still uses today. She's now in her final year and volunteers as a peer mentor for first-year students.",
+  },
+  {
+    name: 'Daniel, 31',
+    tag: 'Depression & Loss',
+    color: '#6366f1',
+    quote: "I didn't recognise depression in myself — I just thought I was becoming a worse version of who I used to be. Someone else saw it before I did.",
+    story: "After losing his father, Daniel withdrew from everyone and stopped doing things that used to bring him joy. He told himself he just needed time. Two years passed. A friend quietly mentioned he seemed different — not in a judgmental way, just with love. That conversation led to his first appointment with a GP, then a therapist. 'Grief and depression can look the same from the outside, but they're different. I needed help with both.' He now runs a quiet online community for men going through loss.",
+  },
+  {
+    name: 'Priya, 27',
+    tag: 'Burnout & Recovery',
+    color: '#f59e0b',
+    quote: "I thought burnout was just tiredness. I didn't know it could hollow you out completely — until it did.",
+    story: "Priya built her career fast and worked harder than anyone around her. At 25, she collapsed — not physically, but everything stopped feeling meaningful. She couldn't concentrate, lost her appetite, and cried in the work bathroom every morning. A doctor told her she had clinical burnout. She took six weeks off — the first extended break of her adult life. She relearned how to rest, rebuilt slowly, and found that the version of herself she'd been neglecting was still there, waiting. 'Recovery isn't going back to who you were. It's meeting who you actually are.'",
+  },
+  {
+    name: 'Marcus, 22',
+    tag: 'OCD & Stigma',
+    color: '#10b981',
+    quote: "I thought having OCD meant something was deeply wrong with me as a person. I didn't know it was a medical condition I could treat.",
+    story: "Marcus had intrusive thoughts from childhood but never named them. He developed rituals to manage the anxiety — checking, counting, replaying — and hid them completely. When he started therapy at 20 and heard the words 'this is OCD', he cried with relief. 'I thought I was dangerous. I wasn't. I was struggling.' With ERP therapy and support, he learned to live alongside the noise rather than be controlled by it. He now speaks openly about OCD online to counter the myths around it.",
+  },
+  {
+    name: 'Selin, 35',
+    tag: 'Postpartum & Identity',
+    color: '#ec4899',
+    quote: "Everyone told me I should be happy. I was terrified. I thought something was wrong with me as a mother.",
+    story: "Selin adored her baby and also struggled with a darkness she hadn't expected. She didn't recognise the symptoms of postpartum depression — she thought she was just adjusting. When she told her midwife at a routine appointment how she was really feeling, she was met with immediate support instead of judgment. 'That moment changed everything.' She spent four months in a mother-baby therapy program and rebuilt her sense of self alongside her new role. 'Asking for help made me a better mother — not a worse one.'",
+  },
+]
+
+export function StoriesOfHope() {
+  const [expanded, setExpanded] = useState(null)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {STORIES.map((s, i) => {
+        const open = expanded === i
+        return (
+          <div key={i} style={{
+            border: `1px solid ${open ? s.color + '60' : 'rgba(255,215,150,0.12)'}`,
+            background: open ? `${s.color}10` : 'rgba(255,245,220,0.04)',
+            borderRadius: 14, overflow: 'hidden', transition: 'all 0.25s',
+          }}>
+            <button onClick={() => setExpanded(open ? null : i)} style={{
+              width: '100%', display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px',
+              background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'white',
+            }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: `${s.color}30`, border: `2px solid ${s.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+                {s.name[0]}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'rgba(255,240,200,0.9)' }}>{s.name}</span>
+                  <span style={{ fontSize: '0.7rem', background: `${s.color}25`, color: s.color, borderRadius: 6, padding: '2px 8px', fontWeight: 600 }}>{s.tag}</span>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: 'rgba(255,240,200,0.55)', fontStyle: 'italic', lineHeight: 1.5 }}>"{s.quote}"</p>
+              </div>
+              <span style={{ fontSize: '0.85rem', color: 'rgba(255,240,200,0.3)', flexShrink: 0, marginTop: 2 }}>{open ? '▲' : '▼'}</span>
+            </button>
+            {open && (
+              <div style={{ padding: '0 16px 16px 68px', fontSize: '0.85rem', color: 'rgba(255,240,200,0.7)', lineHeight: 1.8 }}>
+                {s.story}
+              </div>
+            )}
+          </div>
+        )
+      })}
+      <p style={{ fontSize: '0.75rem', color: 'rgba(255,240,200,0.3)', textAlign: 'center', marginTop: 4 }}>
+        Stories are fictional composites created to represent common lived experiences.
+      </p>
     </div>
   )
 }
